@@ -6,7 +6,8 @@ export default async function Home() {
 
   return (
     <main>
-      <h1>Flood Reports</h1>
+      <h1>Flood Reports Testing</h1>
+      <p>Displaying the latest flood reports fetched from the server.</p>
       <pre>{JSON.stringify(data, null, 2)}</pre>
     </main>
   );
