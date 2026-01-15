@@ -1,5 +1,6 @@
 export default async function Home() {
-  const res = await fetch('http://localhost:3000/reports', {
+  const BACKENDURL = process.env.NEXT_PUBLIC_BACKENDURL;
+  const res = await fetch(`${BACKENDURL}/reports`, {
     cache: 'no-store',
   });
   const data = await res.json();
