@@ -1,5 +1,10 @@
 export default async function Home() {
   const BACKENDURL = process.env.NEXT_PUBLIC_BACKENDURL;
+
+  if (!BACKENDURL) {
+    throw new Error('Required environment variable NEXT_PUBLIC_BACKENDURL is not set.');
+  }
+  
   const res = await fetch(`${BACKENDURL}/reports`, {
     cache: 'no-store',
   });
