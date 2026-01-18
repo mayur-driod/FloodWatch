@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useTheme } from 'next-themes';
 import createGlobe from 'cobe';
 
 // Flood report locations with severity
@@ -9,12 +10,18 @@ const FLOOD_LOCATIONS = [
   { lat: 19.0760, lng: 72.8777, city: 'Mumbai', severity: 0.9 },
   { lat: 22.5726, lng: 88.3639, city: 'Kolkata', severity: 0.6 },
   { lat: 13.0827, lng: 80.2707, city: 'Chennai', severity: 0.7 },
-  { lat: 28.6139, lng: 77.2090, city: 'Delhi', severity: 0.1 },
+  { lat: 28.6139, lng: 77.2090, city: 'Delhi', severity: 0.4 },
 ];
 
 // Dot matrix background component
-const DotMatrix = () => {
+const DotMatrix = ({ isDark }: { isDark: boolean }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const isDarkRef = useRef(isDark);
+
+  // Update ref when isDark changes (avoids recreating dots)
+  useEffect(() => {
+    isDarkRef.current = isDark;
+  }, [isDark]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -59,7 +66,9 @@ const DotMatrix = () => {
         const flicker = Math.sin(time * dot.flickerSpeed + dot.flickerPhase);
         const opacity = dot.opacity + flicker * 0.15;
 
-        ctx.fillStyle = `rgba(156, 163, 175, ${Math.max(0, Math.min(opacity, 0.4))})`;
+        // Use ref to get current theme without recreating animation
+        const color = isDarkRef.current ? '255, 255, 255' : '156, 163, 175';
+        ctx.fillStyle = `rgba(${color}, ${Math.max(0, Math.min(opacity, 0.4))})`;
         ctx.beginPath();
         ctx.arc(dot.x, dot.y, dotRadius, 0, Math.PI * 2);
         ctx.fill();
@@ -74,18 +83,44 @@ const DotMatrix = () => {
       window.removeEventListener('resize', resizeCanvas);
       cancelAnimationFrame(animationFrame);
     };
-  }, []);
+  }, []); // Empty deps - animation runs continuously, reads theme from ref
 
   return <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" />;
 };
+
+// Custom hook to handle hydration - defers setState to avoid lint warning
+function useIsMounted() {
+  const [mounted, setMounted] = useState(false);
+  
+  useEffect(() => {
+    // Using requestAnimationFrame defers the state update outside the effect's synchronous execution
+    const frame = requestAnimationFrame(() => {
+      setMounted(true);
+    });
+    return () => cancelAnimationFrame(frame);
+  }, []);
+  
+  return mounted;
+}
 
 export default function GlobeHero() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const pointerInteracting = useRef<number | null>(null);
   const pointerInteractionMovement = useRef(0);
   const [isLoaded, setIsLoaded] = useState(false);
+  const { resolvedTheme } = useTheme();
+  const mounted = useIsMounted();
+
+  const isDark = mounted && resolvedTheme === 'dark';
 
   useEffect(() => {
+    if (!mounted) return;
+    
+    // Reset opacity for smooth transition when theme changes
+    if (canvasRef.current) {
+      canvasRef.current.style.opacity = '0';
+    }
+    
     let phi = 0;
     let width = 0;
     const onResize = () => canvasRef.current && (width = canvasRef.current.offsetWidth);
@@ -104,13 +139,13 @@ export default function GlobeHero() {
       height: width * 2,
       phi: 0,
       theta: 0.3,
-      dark: 0,
+      dark: isDark ? 1 : 0,
       diffuse: 0.4,
       mapSamples: 20000,
-      mapBrightness: 1.2,
-      baseColor: [1, 1, 1] as [number, number, number],
+      mapBrightness: isDark ? 6 : 1.2,
+      baseColor: isDark ? [0.3, 0.3, 0.3] as [number, number, number] : [1, 1, 1] as [number, number, number],
       markerColor: [0.94, 0.27, 0.27] as [number, number, number], // red for flood markers
-      glowColor: [0.94, 0.27, 0.27] as [number, number, number],
+      glowColor: isDark ? [0.1, 0.1, 0.1] as [number, number, number] : [0.8, 0.8, 0.8] as [number, number, number],
       markers,
       onRender: (state) => {
         if (!pointerInteracting.current) {
@@ -122,33 +157,34 @@ export default function GlobeHero() {
       },
     });
 
-
-    setTimeout(() => {
+    // Fade in after globe is ready
+    const fadeInTimeout = setTimeout(() => {
       if (canvasRef.current) {
         canvasRef.current.style.opacity = '1';
         setIsLoaded(true);
       }
     }, 100);
 
-return () => {
-  globe.destroy();
-  window.removeEventListener('resize', onResize);
-};
-    }, []);
+    return () => {
+      globe.destroy();
+      window.removeEventListener('resize', onResize);
+      clearTimeout(fadeInTimeout);
+    };
+  }, [mounted, isDark]);
 
   return (
-    <section className="relative h-screen w-full overflow-hidden bg-[#f5f5f5]">
+    <section className="relative h-screen w-full overflow-hidden bg-[#f5f5f5] dark:bg-[#0a0a0a]">
       {/* Animated dot matrix background */}
-      <DotMatrix />
+      <DotMatrix isDark={isDark} />
 
       {/* Subtle gradient overlay */}
-      <div className="absolute inset-0 bg-linear-to-br from-transparent via-transparent to-white/30 pointer-events-none" />
+      <div className="absolute inset-0 bg-linear-to-br from-transparent via-transparent to-white/30 dark:to-black/30 pointer-events-none" />
 
       {/* Globe Container - centered right */}
       <div className="absolute right-[8%] top-1/2 -translate-y-1/2 size-162.5">
         {/* Green glow behind globe */}
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <div className="size-137.5 rounded-full bg-green-400/15 blur-[120px]" />
+          <div className="size-100 rounded-full bg-green-500/25 blur-[80px]" />
         </div>
 
         <div
@@ -201,7 +237,7 @@ return () => {
         <div className={`max-w-2xl ml-8 md:ml-20 space-y-6 transition-all duration-1000 ${isLoaded ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-10'}`}>
           
           {/* Main Headline */}
-          <h1 className="text-5xl md:text-7xl font-bold text-black leading-[1.1] tracking-tight">
+          <h1 className="text-5xl md:text-7xl font-bold text-black dark:text-white leading-[1.1] tracking-tight">
             Floods are becoming
             <br />
             <span className="block mt-1">
@@ -210,13 +246,13 @@ return () => {
           </h1>
 
           {/* Subheadline */}
-          <p className="text-lg md:text-xl text-gray-700 leading-relaxed max-w-xl">
+          <p className="text-lg md:text-xl text-gray-700 dark:text-gray-300 leading-relaxed max-w-xl">
             FloodLens helps people report real-world flooding and see what&apos;s actually happening —{' '}
-            <span className="font-semibold text-black">street by street</span>.
+            <span className="font-semibold text-black dark:text-white">street by street</span>.
           </p>
 
           {/* Tagline */}
-          <p className="text-base text-gray-600 max-w-lg">
+          <p className="text-base text-gray-600 dark:text-gray-400 max-w-lg">
             Verified by Science. Secured by Data. Trusted by Design.
           </p>
 
@@ -224,7 +260,7 @@ return () => {
           <div className="pt-2 pointer-events-auto">
             <a
               href="/report"
-              className="inline-flex items-center gap-2 px-8 py-4 bg-gray-900 text-white font-semibold rounded-full transition-all duration-300 hover:bg-gray-800 hover:shadow-xl hover:scale-[1.02]"
+              className="inline-flex items-center gap-2 px-8 py-4 bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-semibold rounded-full transition-all duration-300 hover:bg-gray-800 dark:hover:bg-gray-100 hover:shadow-xl hover:scale-[1.02]"
             >
               Report flooding
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -236,16 +272,16 @@ return () => {
           {/* Stats */}
           <div className="flex gap-8 pt-4">
             <div className="space-y-1">
-              <div className="text-3xl font-bold text-black">12,847</div>
-              <div className="text-sm text-gray-600">Active reports</div>
+              <div className="text-3xl font-bold text-black dark:text-white">12,847</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">Active reports</div>
             </div>
             <div className="space-y-1">
-              <div className="text-3xl font-bold text-black">48</div>
-              <div className="text-sm text-gray-600">Cities covered</div>
+              <div className="text-3xl font-bold text-black dark:text-white">48</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">Cities covered</div>
             </div>
             <div className="space-y-1">
-              <div className="text-3xl font-bold text-green-600">Live</div>
-              <div className="text-sm text-gray-600">Updated now</div>
+              <div className="text-3xl font-bold text-green-600 dark:text-green-400">Live</div>
+              <div className="text-sm text-gray-600 dark:text-gray-400">Updated now</div>
             </div>
           </div>
         </div>
