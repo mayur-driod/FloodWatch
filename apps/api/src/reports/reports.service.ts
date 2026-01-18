@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 
 @Injectable()
 export class ReportsService {
-      getReports() {
+  getReports() {
     return [
       {
         id: '1',
