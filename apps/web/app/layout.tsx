@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider"
+import { ToastProvider } from "@/components/ui/toast"
 import { Navbar } from "@/components/navbar/Navbar"
 import "./globals.css";
 
@@ -33,8 +34,10 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-          <Navbar user={user} />
-          {children}
+          <ToastProvider>
+            <Navbar user={user} />
+            {children}
+          </ToastProvider>
         </ThemeProvider>
       </body>
     </html>
