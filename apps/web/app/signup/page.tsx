@@ -3,38 +3,62 @@
 import * as React from "react"
 import { useState } from "react"
 import { signIn } from "next-auth/react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/components/ui/toast"
 import { DotMatrix } from "@/components/ui/dot-matrix"
-import { Mail, Lock, Github, Loader2 } from "lucide-react"
+import { Mail, Lock, User, Github, Loader2 } from "lucide-react"
 
-export default function LoginPage() {
+export default function SignUpPage() {
   const router = useRouter()
-  const searchParams = useSearchParams()
   const { toast } = useToast()
-  const callbackUrl = searchParams.get("callbackUrl") || "/"
-  const error = searchParams.get("error")
 
   const [isLoading, setIsLoading] = useState(false)
   const [isOAuthLoading, setIsOAuthLoading] = useState<string | null>(null)
   const [formData, setFormData] = useState({
+    name: "",
     email: "",
     password: "",
+    confirmPassword: "",
   })
-
-  React.useEffect(() => {
-    if (error) {
-      toast(error === "CredentialsSignin" ? "Invalid email or password" : error, "error")
-    }
-  }, [error, toast])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    if (formData.password !== formData.confirmPassword) {
+      toast("Passwords do not match", "error")
+      return
+    }
+
+    if (formData.password.length < 8) {
+      toast("Password must be at least 8 characters", "error")
+      return
+    }
+
     setIsLoading(true)
 
     try {
+      const res = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          password: formData.password,
+        }),
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        toast(data.error || "Something went wrong", "error")
+        return
+      }
+
+      toast("Account created! Signing you in...", "success")
+
+      // Auto sign in after successful signup
       const result = await signIn("credentials", {
         email: formData.email,
         password: formData.password,
@@ -42,10 +66,10 @@ export default function LoginPage() {
       })
 
       if (result?.error) {
-        toast(result.error, "error")
+        toast("Account created but couldn't sign in automatically", "warning")
+        router.push("/login")
       } else {
-        toast("Welcome back!", "success")
-        router.push(callbackUrl)
+        router.push("/")
         router.refresh()
       }
     } catch {
@@ -57,7 +81,7 @@ export default function LoginPage() {
 
   const handleOAuthSignIn = (provider: string) => {
     setIsOAuthLoading(provider)
-    signIn(provider, { callbackUrl })
+    signIn(provider, { callbackUrl: "/" })
   }
 
   return (
@@ -66,9 +90,9 @@ export default function LoginPage() {
       <div className="w-full max-w-sm space-y-8">
         {/* Header */}
         <div className="text-center space-y-2">
-          <h1 className="text-2xl font-bold tracking-tight">Welcome back</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Create an account</h1>
           <p className="text-sm text-muted-foreground">
-            Sign in to your account to continue
+            Join FloodWatch to report and track flooding
           </p>
         </div>
 
@@ -135,6 +159,23 @@ export default function LoginPage() {
         {/* Email Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
+            <label htmlFor="name" className="text-sm font-medium">
+              Name
+            </label>
+            <div className="relative">
+              <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <input
+                id="name"
+                type="text"
+                placeholder="John Doe"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                className="w-full pl-10 pr-4 py-2 rounded-lg border border-input bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
             <label htmlFor="email" className="text-sm font-medium">
               Email
             </label>
@@ -170,23 +211,41 @@ export default function LoginPage() {
             </div>
           </div>
 
+          <div className="space-y-2">
+            <label htmlFor="confirmPassword" className="text-sm font-medium">
+              Confirm Password
+            </label>
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <input
+                id="confirmPassword"
+                type="password"
+                placeholder="••••••••"
+                value={formData.confirmPassword}
+                onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                className="w-full pl-10 pr-4 py-2 rounded-lg border border-input bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                required
+              />
+            </div>
+          </div>
+
           <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Signing in...
+                Creating account...
               </>
             ) : (
-              "Sign in"
+              "Create account"
             )}
           </Button>
         </form>
 
         {/* Footer */}
         <p className="text-center text-sm text-muted-foreground">
-          Don&apos;t have an account?{" "}
-          <Link href="/signup" className="font-medium text-primary hover:underline">
-            Sign up
+          Already have an account?{" "}
+          <Link href="/login" className="font-medium text-primary hover:underline">
+            Sign in
           </Link>
         </p>
       </div>
