@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
+import { useSession, signOut } from 'next-auth/react';
 import { User, Settings, LogOut, LogIn, UserPlus } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -14,20 +15,38 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ModeToggle } from '@/components/Mode-Toggle/modeToggle';
+import { useToast } from '@/components/ui/toast';
+import { useAppearance } from '@/components/appearance-provider';
 
-interface User {
-  name: string;
-  email: string;
-  image?: string;
-}
+export function Navbar() {
+  const { data: session } = useSession();
+  const { toast } = useToast();
+  const { appearance } = useAppearance();
+  const user = session?.user;
 
-interface NavbarProps {
-  user?: User | null;
-}
+  const handleSignOut = async () => {
+    await signOut({ redirect: false });
+    toast("Signed out successfully", "success");
+    // window.location.href = "/";
+  };
 
-export function Navbar({ user }: NavbarProps) {
+  const getInitials = (name?: string | null) => {
+    if (!name) return "U";
+    return name
+      .split(' ')
+      .map((n) => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
+  // Dynamic glass effect classes based on appearance settings
+  const navClasses = appearance.glassEffects && !appearance.reduceTransparency
+    ? "fixed top-0 left-0 right-0 z-50 backdrop-blur-md bg-white/80 dark:bg-black/80 border-b border-gray-200/50 dark:border-white/10"
+    : "fixed top-0 left-0 right-0 z-50 bg-white dark:bg-black border-b border-gray-200 dark:border-gray-800";
+
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 dark:bg-black/80 backdrop-blur-md border-b border-gray-200/50 dark:border-white/10">
+    <nav className={navClasses}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
@@ -66,13 +85,9 @@ export function Navbar({ user }: NavbarProps) {
                     className="relative h-9 w-9 rounded-full"
                   >
                     <Avatar className="h-9 w-9">
-                      <AvatarImage src={user.image} alt={user.name} />
+                      <AvatarImage src={user.image || undefined} alt={user.name || "User"} />
                       <AvatarFallback className="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200">
-                        {user.name
-                          .split(' ')
-                          .map((n) => n[0])
-                          .join('')
-                          .toUpperCase()}
+                        {getInitials(user.name)}
                       </AvatarFallback>
                     </Avatar>
                   </Button>
@@ -80,18 +95,14 @@ export function Navbar({ user }: NavbarProps) {
                 <DropdownMenuContent align="end" className="w-56">
                   <div className="flex items-center gap-2 p-2">
                     <Avatar className="h-8 w-8">
-                      <AvatarImage src={user.image} alt={user.name} />
+                      <AvatarImage src={user.image || undefined} alt={user.name || "User"} />
                       <AvatarFallback className="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-xs">
-                        {user.name
-                          .split(' ')
-                          .map((n) => n[0])
-                          .join('')
-                          .toUpperCase()}
+                        {getInitials(user.name)}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex flex-col">
                       <span className="text-sm font-medium text-gray-900 dark:text-white">
-                        {user.name}
+                        {user.name || "User"}
                       </span>
                       <span className="text-xs text-gray-500 dark:text-gray-400 truncate">
                         {user.email}
@@ -112,7 +123,10 @@ export function Navbar({ user }: NavbarProps) {
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem className="text-red-600 dark:text-red-400 cursor-pointer">
+                  <DropdownMenuItem 
+                    className="text-red-600 dark:text-red-400 cursor-pointer"
+                    onClick={handleSignOut}
+                  >
                     <LogOut className="mr-2 h-4 w-4" />
                     Log out
                   </DropdownMenuItem>

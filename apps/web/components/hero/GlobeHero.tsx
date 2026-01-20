@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTheme } from 'next-themes';
 import createGlobe from 'cobe';
+import { useAppearance } from '@/components/appearance-provider';
 
 // Flood report locations with severity
 const FLOOD_LOCATIONS = [
@@ -14,7 +15,7 @@ const FLOOD_LOCATIONS = [
 ];
 
 // Dot matrix background component
-const DotMatrix = ({ isDark }: { isDark: boolean }) => {
+const DotMatrix = ({ isDark, animationsEnabled }: { isDark: boolean; animationsEnabled: boolean }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const isDarkRef = useRef(isDark);
 
@@ -60,10 +61,14 @@ const DotMatrix = ({ isDark }: { isDark: boolean }) => {
 
     const animate = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      time += 0.016;
+      
+      // Only animate if animations are enabled
+      if (animationsEnabled) {
+        time += 0.016;
+      }
 
       dots.forEach(dot => {
-        const flicker = Math.sin(time * dot.flickerSpeed + dot.flickerPhase);
+        const flicker = animationsEnabled ? Math.sin(time * dot.flickerSpeed + dot.flickerPhase) : 0;
         const opacity = dot.opacity + flicker * 0.15;
 
         // Use ref to get current theme without recreating animation
@@ -83,7 +88,7 @@ const DotMatrix = ({ isDark }: { isDark: boolean }) => {
       window.removeEventListener('resize', resizeCanvas);
       cancelAnimationFrame(animationFrame);
     };
-  }, []); // Empty deps - animation runs continuously, reads theme from ref
+  }, [animationsEnabled]); // Re-run when animations toggle changes
 
   return <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" />;
 };
@@ -110,6 +115,7 @@ export default function GlobeHero() {
   const [isLoaded, setIsLoaded] = useState(false);
   const { resolvedTheme } = useTheme();
   const mounted = useIsMounted();
+  const { appearance } = useAppearance();
 
   const isDark = mounted && resolvedTheme === 'dark';
 
@@ -175,7 +181,7 @@ export default function GlobeHero() {
   return (
     <section className="relative h-screen w-full overflow-hidden bg-[#f5f5f5] dark:bg-[#0a0a0a]">
       {/* Animated dot matrix background */}
-      <DotMatrix isDark={isDark} />
+      <DotMatrix isDark={isDark} animationsEnabled={appearance.animationsEnabled} />
 
       {/* Subtle gradient overlay */}
       <div className="absolute inset-0 bg-linear-to-br from-transparent via-transparent to-white/30 dark:to-black/30 pointer-events-none" />
