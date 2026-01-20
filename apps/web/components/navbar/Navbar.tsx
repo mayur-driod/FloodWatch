@@ -16,16 +16,18 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ModeToggle } from '@/components/Mode-Toggle/modeToggle';
 import { useToast } from '@/components/ui/toast';
+import { useAppearance } from '@/components/appearance-provider';
 
 export function Navbar() {
   const { data: session } = useSession();
   const { toast } = useToast();
+  const { appearance } = useAppearance();
   const user = session?.user;
 
   const handleSignOut = async () => {
     await signOut({ redirect: false });
-    toast("Signed out successfully", "info");
-    window.location.href = "/";
+    toast("Signed out successfully", "success");
+    // window.location.href = "/";
   };
 
   const getInitials = (name?: string | null) => {
@@ -37,8 +39,14 @@ export function Navbar() {
       .toUpperCase()
       .slice(0, 2);
   };
+
+  // Dynamic glass effect classes based on appearance settings
+  const navClasses = appearance.glassEffects && !appearance.reduceTransparency
+    ? "fixed top-0 left-0 right-0 z-50 backdrop-blur-md bg-white/80 dark:bg-black/80 border-b border-gray-200/50 dark:border-white/10"
+    : "fixed top-0 left-0 right-0 z-50 bg-white dark:bg-black border-b border-gray-200 dark:border-gray-800";
+
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 dark:bg-black/80 backdrop-blur-md border-b border-gray-200/50 dark:border-white/10">
+    <nav className={navClasses}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}

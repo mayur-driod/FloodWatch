@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Inter } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider"
+import { AppearanceProvider } from "@/components/appearance-provider"
 import { ToastProvider } from "@/components/ui/toast"
 import { AuthProvider } from "@/components/auth-provider"
 import { Navbar } from "@/components/navbar/Navbar"
@@ -13,6 +14,11 @@ const geistSans = Geist({
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
+
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
 });
 
@@ -29,14 +35,16 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${inter.variable} antialiased`}
       >
         <AuthProvider>
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-            <ToastProvider>
-              <Navbar />
-              {children}
-            </ToastProvider>
+            <AppearanceProvider>
+              <ToastProvider>
+                <Navbar />
+                {children}
+              </ToastProvider>
+            </AppearanceProvider>
           </ThemeProvider>
         </AuthProvider>
       </body>

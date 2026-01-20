@@ -8,6 +8,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/components/ui/toast"
 import { DotMatrix } from "@/components/ui/dot-matrix"
+import { useAppearance } from "@/components/appearance-provider"
 import { Mail, Lock, User, Github, Loader2, Eye, EyeOff } from "lucide-react"
 
 export default function SignUpPage() {
@@ -86,10 +87,16 @@ export default function SignUpPage() {
     signIn(provider, { callbackUrl: "/" })
   }
 
+  const { appearance } = useAppearance()
+  
+  const cardClasses = appearance.glassEffects && !appearance.reduceTransparency
+    ? "backdrop-blur-xl bg-white/70 dark:bg-gray-900/70 border border-white/20 dark:border-gray-700/30 shadow-xl"
+    : "bg-card border border-border shadow-lg"
+
   return (
-    <div className="min-h-screen flex items-center justify-center px-4">
+    <div className="min-h-screen flex items-center justify-center px-4 py-20">
       <DotMatrix />
-      <div className="w-full max-w-sm space-y-8">
+      <div className={`w-full max-w-sm space-y-8 p-8 rounded-2xl ${cardClasses}`}>
         {/* Header */}
         <div className="text-center space-y-2">
           <h1 className="text-2xl font-bold tracking-tight">Create an account</h1>

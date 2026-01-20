@@ -2,16 +2,23 @@
 
 import { useEffect, useRef } from 'react';
 import { useTheme } from 'next-themes';
+import { useAppearance } from '@/components/appearance-provider';
 
 export function DotMatrix() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { resolvedTheme } = useTheme();
+  const { appearance } = useAppearance();
   const isDarkRef = useRef(resolvedTheme === 'dark');
+  const animationsEnabledRef = useRef(appearance.animationsEnabled);
 
-  // Update ref when theme changes
+  // Update refs when values change
   useEffect(() => {
     isDarkRef.current = resolvedTheme === 'dark';
   }, [resolvedTheme]);
+
+  useEffect(() => {
+    animationsEnabledRef.current = appearance.animationsEnabled;
+  }, [appearance.animationsEnabled]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -50,10 +57,16 @@ export function DotMatrix() {
 
     const animate = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      time += 0.016;
+      
+      // Only advance time if animations are enabled
+      if (animationsEnabledRef.current) {
+        time += 0.016;
+      }
 
       dots.forEach(dot => {
-        const flicker = Math.sin(time * dot.flickerSpeed + dot.flickerPhase);
+        const flicker = animationsEnabledRef.current 
+          ? Math.sin(time * dot.flickerSpeed + dot.flickerPhase)
+          : 0;
         const opacity = dot.opacity + flicker * 0.15;
 
         const color = isDarkRef.current ? '255, 255, 255' : '156, 163, 175';

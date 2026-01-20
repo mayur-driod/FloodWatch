@@ -27,7 +27,7 @@ async function main() {
   })
   console.log("✅ Admin role created/verified")
 
-  const _moderatorRole = await prisma.role.upsert({
+  await prisma.role.upsert({
     where: { name: "moderator" },
     update: {},
     create: { 
@@ -42,7 +42,7 @@ async function main() {
   })
   console.log("✅ Moderator role created/verified")
 
-  const _userRole = await prisma.role.upsert({
+  await prisma.role.upsert({
     where: { name: "user" },
     update: {},
     create: { 
