@@ -11,6 +11,22 @@ import { DotMatrix } from "@/components/ui/dot-matrix"
 import { useAppearance } from "@/components/appearance-provider"
 import { Mail, Lock, Github, Loader2, Eye, EyeOff } from "lucide-react"
 
+const ERROR_MESSAGES: Record<string, string> = {
+  CredentialsSignin: "Invalid email or password",
+  Callback: "There was a problem with the authentication callback. Please try again.",
+  OAuthCallback: "There was a problem signing in with OAuth. Please try again.",
+  OAuthAccountNotLinked: "This email is already associated with another account.",
+  OAuthCreateAccount: "Could not create OAuth account. Please try again.",
+  EmailCreateAccount: "Could not create account. Please try again.",
+  SessionRequired: "Please sign in to access this page.",
+  OAuthSignin: "Error starting OAuth sign in. Please try again.",
+  EmailSignin: "Error sending verification email.",
+  AccessDenied: "Access denied. You do not have permission to sign in.",
+  Configuration: "Server configuration error. Please contact support.",
+  Verification: "The verification link has expired or is invalid.",
+  Default: "An error occurred during sign in. Please try again.",
+};
+
 function LoginContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -28,7 +44,8 @@ function LoginContent() {
 
   React.useEffect(() => {
     if (error) {
-      toast(error === "CredentialsSignin" ? "Invalid email or password" : error, "error")
+      const message = ERROR_MESSAGES[error] || ERROR_MESSAGES.Default
+      toast(message, "error")
     }
   }, [error, toast])
 

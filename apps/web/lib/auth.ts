@@ -77,6 +77,7 @@ export const authOptions: NextAuthOptions = {
       },
     }),
   ],
+  secret: process.env.NEXTAUTH_SECRET,
   callbacks: {
     async jwt({ token, user, trigger, session }) {
       if (user) {
@@ -99,24 +100,62 @@ export const authOptions: NextAuthOptions = {
       }
       return session
     },
-    async signIn({ user, account }) {
-      // For OAuth providers, assign default "user" role if new user
+    async signIn({ user, account, profile }) {
+      // For OAuth providers, handle account linking and role assignment
       if (account?.provider !== "credentials") {
         const existingUser = await prisma.user.findUnique({
           where: { email: user.email! },
-          include: { roles: true },
+          include: { roles: true, accounts: true },
         })
 
-        if (existingUser && existingUser.roles.length === 0) {
-          const userRole = await prisma.role.findUnique({
-            where: { name: "user" },
-          })
+        if (existingUser) {
+          // Check if this OAuth account is already linked
+          const existingAccount = existingUser.accounts.find(
+            (acc) => acc.provider === account?.provider && acc.providerAccountId === account?.providerAccountId
+          )
 
-          if (userRole) {
-            await prisma.userRole.create({
+          // If the account isn't linked yet, link it
+          if (!existingAccount && account) {
+            await prisma.account.create({
               data: {
                 userId: existingUser.id,
-                roleId: userRole.id,
+                type: account.type,
+                provider: account.provider,
+                providerAccountId: account.providerAccountId,
+                access_token: account.access_token,
+                refresh_token: account.refresh_token,
+                expires_at: account.expires_at,
+                token_type: account.token_type,
+                scope: account.scope,
+                id_token: account.id_token,
+                session_state: account.session_state as string | null,
+              },
+            })
+          }
+
+          // Assign default "user" role if no roles exist
+          if (existingUser.roles.length === 0) {
+            const userRole = await prisma.role.findUnique({
+              where: { name: "user" },
+            })
+
+            if (userRole) {
+              await prisma.userRole.create({
+                data: {
+                  userId: existingUser.id,
+                  roleId: userRole.id,
+                },
+              })
+            }
+          }
+
+          // Update user info from OAuth profile if missing
+          if (!existingUser.name || !existingUser.image) {
+            await prisma.user.update({
+              where: { id: existingUser.id },
+              data: {
+                name: existingUser.name || user.name,
+                image: existingUser.image || user.image,
               },
             })
           }
