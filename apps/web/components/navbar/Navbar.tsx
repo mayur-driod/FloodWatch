@@ -47,7 +47,7 @@ export function Navbar() {
 
   return (
     <nav className={navClasses}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="w-full px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2">
@@ -72,19 +72,20 @@ export function Navbar() {
           </Link>
 
           {/* Right side */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             {/* Theme Toggle */}
             <ModeToggle />
 
             {/* User Menu */}
             {isLoading ? (
               <Button
-                variant="ghost"
-                className="relative h-9 w-9 rounded-full"
+                variant="outline"
+                size="icon"
+                className="rounded-full"
                 disabled
               >
-                <Avatar className="h-9 w-9">
-                  <AvatarFallback className="bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400 animate-pulse">
+                <Avatar className="h-7 w-7">
+                  <AvatarFallback className="bg-transparent text-gray-500 dark:text-gray-400 animate-pulse">
                     <User className="h-4 w-4" />
                   </AvatarFallback>
                 </Avatar>
@@ -93,12 +94,13 @@ export function Navbar() {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
-                    variant="ghost"
-                    className="relative h-9 w-9 rounded-full"
+                    variant="outline"
+                    size="icon"
+                    className="rounded-full"
                   >
-                    <Avatar className="h-9 w-9">
+                    <Avatar className="h-7 w-7">
                       <AvatarImage src={user.image || undefined} alt={user.name || "User"} />
-                      <AvatarFallback className="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200">
+                      <AvatarFallback className="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-xs">
                         {getInitials(user.name)}
                       </AvatarFallback>
                     </Avatar>
@@ -148,14 +150,11 @@ export function Navbar() {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
-                    variant="ghost"
-                    className="relative h-9 w-9 rounded-full"
+                    variant="outline"
+                    size="icon"
+                    className="rounded-full"
                   >
-                    <Avatar className="h-9 w-9">
-                      <AvatarFallback className="bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400">
-                        <User className="h-4 w-4" />
-                      </AvatarFallback>
-                    </Avatar>
+                    <User className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48">
