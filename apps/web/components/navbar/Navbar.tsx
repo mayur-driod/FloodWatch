@@ -19,15 +19,15 @@ import { useToast } from '@/components/ui/toast';
 import { useAppearance } from '@/components/appearance-provider';
 
 export function Navbar() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const { toast } = useToast();
   const { appearance } = useAppearance();
   const user = session?.user;
+  const isLoading = status === "loading";
 
   const handleSignOut = async () => {
     await signOut({ redirect: false });
     toast("Signed out successfully", "success");
-    // window.location.href = "/";
   };
 
   const getInitials = (name?: string | null) => {
@@ -77,7 +77,19 @@ export function Navbar() {
             <ModeToggle />
 
             {/* User Menu */}
-            {user ? (
+            {isLoading ? (
+              <Button
+                variant="ghost"
+                className="relative h-9 w-9 rounded-full"
+                disabled
+              >
+                <Avatar className="h-9 w-9">
+                  <AvatarFallback className="bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400 animate-pulse">
+                    <User className="h-4 w-4" />
+                  </AvatarFallback>
+                </Avatar>
+              </Button>
+            ) : user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
